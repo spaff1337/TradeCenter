@@ -55,14 +55,20 @@ public class TradeCenter {
 
         // Save persistent data
         saveData();
+
+        // Add location to cache
+        me.spaff.tradecenter.tradecenter.DisplayLocationCache.addDisplayLocation(location);
     }
 
     public void onBreak() {
+        // Remove location from cache
+        me.spaff.tradecenter.tradecenter.DisplayLocationCache.removeDisplayLocation(location);
+
         // Close trade menu for player using it
         beingUsedBy().ifPresent((player) -> player.closeInventory());
 
         // Clear model data
-        clearModels();
+        clearModel();
 
         // Clear persistent data
         clearData();
@@ -163,7 +169,6 @@ public class TradeCenter {
     public static void handleClickEvent(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
         if (e.getClickedInventory() == null) return;
-        if (TradeCenter.getPlayerData(player) == null) return; // Player clicked normal trade menu
 
         Inventory clickedInventory = e.getClickedInventory();
         if (!clickedInventory.getType().equals(InventoryType.MERCHANT)) return;
@@ -177,8 +182,16 @@ public class TradeCenter {
         if (ItemUtils.isNull(resultItem)) return;
         if (isShiftClick && !InventoryUtils.canFitItem(player, resultItem)) return;
 
+        Optional<PlayerTradeCenterData> optionalData = TradeCenter.getPlayerData(player);
+        if (!optionalData.isPresent()) {
+            System.out.println("optional data not present for player " + player.getName());
+            return;
+        }
+
+        PlayerTradeCenterData tradeCenterData = optionalData.get();
+
         // Get selected trade from the menu
-        int selectedTradeIndex = TradeCenter.getPlayerData(player).orElseThrow().getSelectedTrade(); // getSelectedTrade()
+        int selectedTradeIndex = tradeCenterData.getSelectedTrade(); // getSelectedTrade()
 
         // Get player's TRADED_WITH_VILLAGER statistic so we can later tell
         // how many times player traded something
@@ -186,13 +199,13 @@ public class TradeCenter {
 
         // Get trade center location so we can later drop
         // experience orbs after a trade
-        Location tradeCenterLoc = TradeCenter.getPlayerData(player).orElseThrow().getTradeLocation();
+        Location tradeCenterLoc = tradeCenterData.getTradeLocation();
 
-        System.out.println("player data: " + TradeCenter.getPlayerData(player).orElseThrow().getTradeData());
+        System.out.println("player data: " + tradeCenterData.getTradeData());
 
         boolean breakOut = false;
         int tradesAmount = 0;
-        for (VillagerTradeData data : TradeCenter.getPlayerData(player).orElseThrow().getTradeData()) {
+        for (VillagerTradeData data :tradeCenterData.getTradeData()) {
             Villager villager = data.villager();
 
             System.out.println("player data");
@@ -288,7 +301,7 @@ public class TradeCenter {
     }
 
     public static boolean isTradeCenter(Block block) {
-        return new ChunkData(block).getData() != null;
+        return Constants.TRADE_CENTER_DATA_ID.equals(new ChunkData(block).getData());
     }
 
     // Player Data
@@ -337,14 +350,14 @@ public class TradeCenter {
         }
     }
 
-    public void clearModels() {
+    public void clearModel() {
         Bukkit.getOnlinePlayers().forEach((player) -> {
-            clearModels(player);
+            clearModel(player);
         });
         modelData.remove(location);
     }
 
-    public void clearModels(Player player) {
+    public void clearModel(Player player) {
         // Clear old model data for player so the models
         // don't pile up and eventually lag player's game
         if (modelData.get(location) == null) return;

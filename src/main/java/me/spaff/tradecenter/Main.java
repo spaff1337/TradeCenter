@@ -5,6 +5,7 @@ import me.spaff.tradecenter.config.Config;
 import me.spaff.tradecenter.listener.PlayerListener;
 import me.spaff.tradecenter.listener.ServerListener;
 import me.spaff.tradecenter.nms.PacketReader;
+import me.spaff.tradecenter.tradecenter.DisplayLocationCache;
 import me.spaff.tradecenter.tradecenter.TradeCenter;
 import me.spaff.tradecenter.utils.RecipesUtils;
 import org.bukkit.Bukkit;
@@ -14,8 +15,9 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Main extends JavaPlugin {
-    public static final String version = "1.0.2";
+    public static final String version = "1.1.0";
     private static Main instance;
+    private static DisplayLocationCache displayCache;
 
     public Main() {
         instance = this;
@@ -29,6 +31,10 @@ public final class Main extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
+        Config.load();
+
+        displayCache = new DisplayLocationCache(instance);
+
         registerListeners();
         registerCommands();
 
@@ -36,25 +42,25 @@ public final class Main extends JavaPlugin {
             PacketReader.uninjectPlayer(player);
             PacketReader.injectPlayer(player);
         });
-
-        Config.load();
+        
         registerRecipes();
     }
 
     @Override
     public void onDisable() {
-        instance = null;
+        displayCache.clearCache();
+        // instance = null; (doing this invalidates the packetReader and kicks players when the plugin unloads)
     }
 
     // Registers
 
     private void registerListeners() {
         Bukkit.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        Bukkit.getServer().getPluginManager().registerEvents(new ServerListener(), this);
+        Bukkit.getServer().getPluginManager().registerEvents(new ServerListener(instance, displayCache), this);
     }
 
     private void registerCommands() {
-        this.getCommand("tradecenter").setExecutor(new TCCommands());
+        this.getCommand("tradecenter").setExecutor(new TCCommands(displayCache));
     }
 
     private void registerRecipes() {

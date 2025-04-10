@@ -9,3 +9,7 @@ trade-center:
     already-in-use: "&cThis trade center is currently being used by another player!"
     no-villagers-nearby: "&cThere are no nearby villagers!"
     invalid-trade: "&cThis trade no longer exists!"
+  display-cache:
+    auto-reloader-timer: 5
+    auto-reloader-radius: 2 # -1 to disable
+    chunk-listener-radius: 2 # -1 to disable

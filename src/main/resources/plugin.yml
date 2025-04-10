@@ -1,5 +1,5 @@
 name: TradeCenter
-version: '1.0.2'
+version: '1.1.0'
 main: me.spaff.tradecenter.Main
 api-version: '1.21'
 authors: [ spaff ]

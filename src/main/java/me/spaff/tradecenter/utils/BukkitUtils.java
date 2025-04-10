@@ -2,11 +2,11 @@ package me.spaff.tradecenter.utils;
 
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 
 public class BukkitUtils {
-    public static void sendMessage(Player player, String message) {
-        player.sendMessage(StringUtils.getColoredText(message));
+    public static void sendMessage(CommandSender sender, String message) {
+        sender.sendMessage(StringUtils.getColoredText(message));
     }
 
     public static boolean isSameLocation(Location loc1, Location loc2) {

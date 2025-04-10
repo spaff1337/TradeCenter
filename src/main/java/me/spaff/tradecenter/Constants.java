@@ -1,6 +1,5 @@
 package me.spaff.tradecenter;
 
-import me.spaff.tradecenter.utils.StringUtils;
 import org.bukkit.Material;
 
 public class Constants {

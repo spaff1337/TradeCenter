@@ -276,7 +276,7 @@ public class DisplayEntity {
 
         public void updateDisplayContext(DisplayContext context) {
             for (Player player : Bukkit.getOnlinePlayers()) {
-                updateDisplayContext(context);
+                updateDisplayContext(player, context);
             }
         }
 

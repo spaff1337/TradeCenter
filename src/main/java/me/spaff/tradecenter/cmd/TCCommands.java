@@ -4,46 +4,52 @@ import me.spaff.tradecenter.Constants;
 import me.spaff.tradecenter.Main;
 import me.spaff.tradecenter.TCColors;
 import me.spaff.tradecenter.config.Config;
+import me.spaff.tradecenter.tradecenter.DisplayLocationCache;
 import me.spaff.tradecenter.tradecenter.TradeCenter;
 import me.spaff.tradecenter.utils.BukkitUtils;
-import me.spaff.tradecenter.utils.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 
 public class TCCommands implements CommandExecutor {
     private final String prefix = TCColors.YELLOW + "[TradeCenter] ";
+    private DisplayLocationCache displayCache;
 
-    private void sendHelp(Player player) {
-        BukkitUtils.sendMessage(player, "");
-        BukkitUtils.sendMessage(player, TCColors.YELLOW + "                TradeCenter");
-        BukkitUtils.sendMessage(player, TCColors.BRIGHT_YELLOW + "- /tc give <player> - gives player a trade");
-        BukkitUtils.sendMessage(player, TCColors.BRIGHT_YELLOW  + "center place item.");
-        BukkitUtils.sendMessage(player, TCColors.BRIGHT_YELLOW  + "- /tc reload - reloads the config.");
-        BukkitUtils.sendMessage(player, TCColors.BRIGHT_YELLOW  + "- /tc version - shows version of the plugin.");
-        BukkitUtils.sendMessage(player, "");
+    public TCCommands(DisplayLocationCache displayCache) {
+        this.displayCache = displayCache;
     }
 
-    private void sendPluginMessage(Player player, String message) {
-        BukkitUtils.sendMessage(player, prefix + message);
+    private void sendHelp(CommandSender sender) {
+        BukkitUtils.sendMessage(sender, "");
+        BukkitUtils.sendMessage(sender, TCColors.YELLOW + "                TradeCenter");
+        BukkitUtils.sendMessage(sender, TCColors.BRIGHT_YELLOW + "- /tc give <player> - gives player a trade");
+        BukkitUtils.sendMessage(sender, TCColors.BRIGHT_YELLOW  + "center place item.");
+        BukkitUtils.sendMessage(sender, TCColors.BRIGHT_YELLOW  + "- /tc reload - reloads the config.");
+        BukkitUtils.sendMessage(sender, TCColors.BRIGHT_YELLOW  + "- /tc buildcache - adds loaded trade center block locations to cache.");
+        BukkitUtils.sendMessage(sender, TCColors.BRIGHT_YELLOW  + "- /tc clearcache - clears the cache.");
+        BukkitUtils.sendMessage(sender, "");
+    }
+
+    private void sendPluginMessage(CommandSender sender, String message) {
+        BukkitUtils.sendMessage(sender, prefix + message);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) return false;
+        if (!(sender instanceof Player) && !(sender instanceof ConsoleCommandSender)) return false;
 
-        Player player = (Player) sender;
         if (args.length == 0) {
-            sendHelp(player);
+            sendHelp(sender);
             return false;
         }
 
-        if (!player.hasPermission(Constants.COMMAND_PERMISSION)) {
-            BukkitUtils.sendMessage(player, Config.readString("trade-center.message.execute-cmd-no-permission"));
+        if (!sender.hasPermission(Constants.COMMAND_PERMISSION)) {
+            BukkitUtils.sendMessage(sender, Config.readString("trade-center.message.execute-cmd-no-permission"));
             return false;
         }
 
@@ -53,16 +59,17 @@ public class TCCommands implements CommandExecutor {
             if (args.length == 2) {
                 Player otherPlayer = Bukkit.getPlayer(args[1]);
                 if (otherPlayer == null) {
-                    sendPluginMessage(player, "&cInvalid player!");
+                    sendPluginMessage(sender, "&cInvalid player!");
                     return false;
                 }
 
                 otherPlayer.getInventory().addItem(TradeCenter.getTradeCenterItem());
-                sendPluginMessage(player, "&7Gave " + otherPlayer.getName() + " trade center item.");
+                sendPluginMessage(sender, "&7Gave " + otherPlayer.getName() + " trade center item.");
             }
-            else {
+            else if (sender instanceof Player) {
+                Player player = (Player) sender;
                 player.getInventory().addItem(TradeCenter.getTradeCenterItem());
-                sendPluginMessage(player, "&7Gave yourself trade center item.");
+                sendPluginMessage(sender, "&7Gave yourself trade center item.");
             }
         }
         else if (args[0].equalsIgnoreCase("reload")) {
@@ -70,16 +77,24 @@ public class TCCommands implements CommandExecutor {
             Config.reload();
 
             if (oldData == null || oldData.isEmpty() || Config.getRawData() == null || Config.getRawData().isEmpty()) {
-                sendPluginMessage(player, "&cSomething went wrong when reloading the config!");
+                sendPluginMessage(sender, "&cSomething went wrong when reloading the config!");
             }
             else
-                sendPluginMessage(player, "&7Config reloaded successfully!");
+                sendPluginMessage(sender, "&7Config reloaded successfully!");
         }
         else if (args[0].equalsIgnoreCase("version")) {
-            sendPluginMessage(player, "&7Version: &fv" + Main.version);
+            sendPluginMessage(sender, "&7Version: &fv" + Main.version);
+        }
+        else if (args[0].equalsIgnoreCase("buildcache")) {
+            sendPluginMessage(sender, "&7Building DisplayLocactionCache..!" );
+            displayCache.buildCache();
+        }
+        else if (args[0].equalsIgnoreCase("clearcache")) {
+            sendPluginMessage(sender, "&7Clearing DisplayLocactionCache..!" );
+            displayCache.clearCache();
         }
         else
-            sendHelp(player);
+            sendHelp(sender);
 
         return true;
     }
